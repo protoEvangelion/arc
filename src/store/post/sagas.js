@@ -1,40 +1,39 @@
 import { take, put, call, fork } from 'redux-saga/effects'
-import api from 'services/api'
 import * as actions from './actions'
 
-export function* createPost(newData) {
+export function* createPost(newData, api) {
   try {
-    const data = yield call(api.post, '/posts', newData)
+    const data = yield call([api, api.post], '/posts', newData)
     yield put(actions.postCreateSuccess(data))
   } catch (e) {
     yield put(actions.postCreateFailure(e))
   }
 }
 
-export function* readPostList(params) {
+export function* readPostList(params, api) {
   try {
-    const data = yield call(api.get, '/posts', { params })
+    const data = yield call([api, api.get], '/posts', { params })
     yield put(actions.postListReadSuccess(data))
   } catch (e) {
     yield put(actions.postListReadFailure(e))
   }
 }
 
-export function* watchPostCreateRequest() {
+export function* watchPostCreateRequest(api) {
   while (true) {
     const { data } = yield take(actions.POST_CREATE_REQUEST)
-    yield call(createPost, data)
+    yield call(createPost, data, api)
   }
 }
 
-export function* watchPostListReadRequest() {
+export function* watchPostListReadRequest(api) {
   while (true) {
     const { params } = yield take(actions.POST_LIST_READ_REQUEST)
-    yield call(readPostList, params)
+    yield call(readPostList, params, api)
   }
 }
 
-export default function* () {
-  yield fork(watchPostCreateRequest)
-  yield fork(watchPostListReadRequest)
+export default function* (api) {
+  yield fork(watchPostCreateRequest, api)
+  yield fork(watchPostListReadRequest, api)
 }

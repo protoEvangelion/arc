@@ -1,55 +1,55 @@
-import { take, put, call, fork } from 'redux-saga/effects'
-import api from 'services/api'
+import { expectSaga } from 'redux-saga-test-plan'
 import * as actions from './actions'
-import saga, * as sagas from './sagas'
+import saga from './sagas'
 
 describe('createPost', () => {
-  const data = { title: 'test' }
-
   it('calls success', () => {
-    const generator = sagas.createPost(data)
-    expect(generator.next().value).toEqual(call(api.post, '/posts', data))
-    expect(generator.next(data).value).toEqual(put(actions.postCreateSuccess(data)))
+    const api = {
+      post: (url, data) => Promise.resolve({ id: 1, ...data }),
+    }
+
+    return expectSaga(saga, api)
+      .call([api, api.post], '/posts', { title: 'test' })
+      .put(actions.postCreateSuccess({ id: 1, title: 'test' }))
+      .dispatch(actions.postCreateRequest({ title: 'test' }))
+      .run({ timeout: 20, silenceTimeout: true })
   })
 
   it('calls failure', () => {
-    const generator = sagas.createPost(data)
-    expect(generator.next().value).toEqual(call(api.post, '/posts', data))
-    expect(generator.throw('test').value).toEqual(put(actions.postCreateFailure('test')))
+    const api = {
+      post: () => Promise.reject('foo'),
+    }
+
+    return expectSaga(saga, api)
+      .call([api, api.post], '/posts', { title: 'test' })
+      .put(actions.postCreateFailure('foo'))
+      .dispatch(actions.postCreateRequest({ title: 'test' }))
+      .run({ timeout: 20, silenceTimeout: true })
   })
 })
 
 describe('readPostList', () => {
   it('calls success', () => {
-    const data = [1, 2, 3]
-    const generator = sagas.readPostList({ _limit: 1 })
-    expect(generator.next().value).toEqual(call(api.get, '/posts', { params: { _limit: 1 } }))
-    expect(generator.next(data).value).toEqual(put(actions.postListReadSuccess(data)))
+    const api = {
+      get: () => Promise.resolve([1, 2, 3]),
+    }
+
+    return expectSaga(saga, api)
+      .call([api, api.get], '/posts', { params: { _limit: 1 } })
+      .put(actions.postListReadSuccess([1, 2, 3]))
+      .dispatch(actions.postListReadRequest({ _limit: 1 }))
+      .run({ timeout: 20, silenceTimeout: true })
   })
 
   it('calls failure', () => {
-    const generator = sagas.readPostList({ _limit: 1 })
-    expect(generator.next().value).toEqual(call(api.get, '/posts', { params: { _limit: 1 } }))
-    expect(generator.throw('test').value).toEqual(put(actions.postListReadFailure('test')))
+    const api = {
+      get: () => Promise.reject('foo'),
+    }
+
+    return expectSaga(saga, api)
+      .call([api, api.get], '/posts', { params: { _limit: 1 } })
+      .put(actions.postListReadFailure('foo'))
+      .dispatch(actions.postListReadRequest({ _limit: 1 }))
+      .run({ timeout: 20, silenceTimeout: true })
   })
-})
-
-test('watchPostCreateRequest', () => {
-  const payload = { data: 1 }
-  const generator = sagas.watchPostCreateRequest()
-  expect(generator.next().value).toEqual(take(actions.POST_CREATE_REQUEST))
-  expect(generator.next(payload).value).toEqual(call(sagas.createPost, ...Object.values(payload)))
-})
-
-test('watchPostListReadRequest', () => {
-  const payload = { params: { _limit: 1 } }
-  const generator = sagas.watchPostListReadRequest()
-  expect(generator.next().value).toEqual(take(actions.POST_LIST_READ_REQUEST))
-  expect(generator.next(payload).value).toEqual(call(sagas.readPostList, ...Object.values(payload)))
-})
-
-test('saga', () => {
-  const generator = saga()
-  expect(generator.next().value).toEqual(fork(sagas.watchPostCreateRequest))
-  expect(generator.next().value).toEqual(fork(sagas.watchPostListReadRequest))
 })

@@ -5,7 +5,7 @@ import middlewares from './middlewares'
 import reducer from './reducer'
 import sagas from './sagas'
 
-const configureStore = (initialState, history) => {
+const configureStore = (initialState, history, api) => {
   const hasWindow = typeof window !== 'undefined'
   const sagaMiddleware = createSagaMiddleware()
 
@@ -15,7 +15,7 @@ const configureStore = (initialState, history) => {
   )(createStore)
 
   const store = finalCreateStore(reducer, initialState)
-  let sagaTask = sagaMiddleware.run(sagas)
+  let sagaTask = sagaMiddleware.run(sagas, api)
 
   if (module.hot) {
     module.hot.accept('./reducer', () => {
