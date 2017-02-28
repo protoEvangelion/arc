@@ -7,7 +7,6 @@ describe('createPost', () => {
     const api = {
       post: (url, data) => Promise.resolve({ id: 1, ...data }),
     }
-
     return expectSaga(saga, api)
       .call([api, api.post], '/posts', { title: 'test' })
       .put(actions.postCreateSuccess({ id: 1, title: 'test' }))
@@ -19,7 +18,6 @@ describe('createPost', () => {
     const api = {
       post: () => Promise.reject('foo'),
     }
-
     return expectSaga(saga, api)
       .call([api, api.post], '/posts', { title: 'test' })
       .put(actions.postCreateFailure('foo'))
@@ -33,7 +31,6 @@ describe('readPostList', () => {
     const api = {
       get: () => Promise.resolve([1, 2, 3]),
     }
-
     return expectSaga(saga, api)
       .call([api, api.get], '/posts', { params: { _limit: 1 } })
       .put(actions.postListReadSuccess([1, 2, 3]))
@@ -45,7 +42,6 @@ describe('readPostList', () => {
     const api = {
       get: () => Promise.reject('foo'),
     }
-
     return expectSaga(saga, api)
       .call([api, api.get], '/posts', { params: { _limit: 1 } })
       .put(actions.postListReadFailure('foo'))
